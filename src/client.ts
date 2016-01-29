@@ -22,11 +22,12 @@ class VASTClient {
   static get totalCallsTimeout (): number {
     return VASTUtil.storage.getItem("totalCallsTimeout") || 0;
   }
-  public options = {
+  public static options = {
     withCredentials: false,
     timeout: 0
   };
-  public get (url: string , opts: any, cb: any): any {
+
+  public static get = (url: string , opts: any, cb: any): any => {
     let options;
     const now = new Date().getTime();
     const extend =  (object, properties) => {
@@ -44,7 +45,7 @@ class VASTClient {
       }
       options = {};
     }
-    options = extend(this.options, opts);
+    options = extend(VASTClient.options, opts);
     if (VASTClient.totalCallsTimeout < now) {
       VASTClient.totalCalls = 1;
       VASTClient.totalCallsTimeout = now + (60 * 60 * 1000);
@@ -62,7 +63,7 @@ class VASTClient {
     return VASTParser.parse(url, options, (response) => {
       return cb(response);
     });
-  }
+  };
 }
 
 export = VASTClient
