@@ -1,6 +1,6 @@
-/// <reference path="../typings/eventemitter3/eventemitter3.d.ts" />
+/// <reference path="../typings/eventemitter2/eventemitter2.d.ts" />
 
-import EventEmitter3 = require("eventemitter3");
+import EventEmitter2 = require("eventemitter2");
 import URLHandler = require ("./urlhandler");
 import VASTResponse = require ("./response");
 import VASTAd = require ("./ad");
@@ -16,7 +16,7 @@ interface Filter {
 
 class VASTParser {
   private static _URLTemplateFilters: Filter[] = [];
-  private static _eventemitter = new EventEmitter3();
+  private static _eventemitter = new EventEmitter2.EventEmitter2();
 
   public static addURLTemplateFilter = (func: Filter) => {
     if (typeof func === "function") {

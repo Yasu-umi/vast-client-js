@@ -1,10 +1,11 @@
-/// <reference path="../typings/eventemitter3/eventemitter3.d.ts" />
+/// <reference path="../typings/eventemitter2/eventemitter2.d.ts" />
 
+import EventEmitter2 = require("eventemitter2");
 import VASTClient = require("./client");
 import VASTUtil = require("./util");
 import creative = require("./creative");
 
-class VASTTracker extends EventEmitter3.EventEmitter {
+class VASTTracker extends EventEmitter2.EventEmitter2 {
   public ad;
   public creative: creative.VASTCreative;
   public muted: boolean;
