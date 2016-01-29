@@ -1,5 +1,6 @@
 /// <reference path="../typings/eventemitter3/eventemitter3.d.ts" />
 
+import EventEmitter3 = require("eventemitter3");
 import URLHandler = require ("./urlhandler");
 import VASTResponse = require ("./response");
 import VASTAd = require ("./ad");
@@ -15,7 +16,7 @@ interface Filter {
 
 class VASTParser {
   private static _URLTemplateFilters: Filter[] = [];
-  private static _vent = new EventEmitter3.EventEmitter();
+  private static _eventemitter = new EventEmitter3();
 
   public static addURLTemplateFilter = (func: Filter) => {
     if (typeof func === "function") {
@@ -48,17 +49,17 @@ class VASTParser {
   };
 
   public static track = (templates: string[], errorCode): string[] => {
-    VASTParser._vent.emit("VAST-error", errorCode);
+    VASTParser._eventemitter.emit("VAST-error", errorCode);
     return VASTUtil.track(templates, errorCode);
   };
 
   /* tslint:disable */
   public static on = (eventName: string, cb: any): void => {
-    VASTParser._vent.on(eventName, cb);
+    VASTParser._eventemitter.on(eventName, cb);
   };
 
   public static once = (eventName: string, cb: any): void => {
-    VASTParser._vent.once(eventName, cb);
+    VASTParser._eventemitter.once(eventName, cb);
   };
   /* tslint:disable */
 
@@ -210,7 +211,7 @@ class VASTParser {
       const ref3 = VASTParser.childsByName(trackingEventElement, "Tracking");
       for (let l = 0, len3 = ref3.length; l < len3; l++) {
         const trackingElement = <HTMLElement>ref3[l];
-        let eventName = trackingElement.getAttribute("e_vent");
+        let eventName = trackingElement.getAttribute("event");
         const trackingURLTemplate = VASTParser.parseNodeText(trackingElement);
         if ((eventName != null) && (trackingURLTemplate != null)) {
           if (eventName === "progress") {
@@ -307,7 +308,7 @@ class VASTParser {
         const ref5 = VASTParser.childsByName(trackingEventElement, "Tracking");
         for (let n = 0, len5 = ref5.length; n < len5; n++) {
           const trackingElement = <HTMLElement>ref5[n];
-          const eventName = trackingElement.getAttribute("e_vent");
+          const eventName = trackingElement.getAttribute("event");
           const trackingURLTemplate = VASTParser.parseNodeText(trackingElement);
           if ((eventName != null) && (trackingURLTemplate != null)) {
             let base;

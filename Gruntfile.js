@@ -1,7 +1,5 @@
-'use strict';
-
 module.exports = function(grunt) {
-
+  'use strict';
   // Project configuration.
   grunt.initConfig({
     // Metadata.
@@ -41,8 +39,8 @@ module.exports = function(grunt) {
         dest: 'dist/vast-client.js',
         options: {
           browserifyOptions: {
-            standalone: 'VAST',
-            debug: true
+            standalone: 'DMVAST',
+            debug: false
           }
         }
       }
