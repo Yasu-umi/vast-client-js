@@ -10,7 +10,7 @@ class XHRURLHandler {
   }
   public get(url: string, options: any, cb: any): any {
     if (window.location.protocol === "https:" && url.indexOf("http://") === 0) {
-      return cb(new Error("Cannot go from HTTPS to HTTP."));
+      cb(new Error("Cannot go from HTTPS to HTTP."));
     }
     try {
       const xhr = this.xhr();
@@ -18,13 +18,13 @@ class XHRURLHandler {
       xhr.timeout = options.timeout || 0;
       xhr.withCredentials = options.withCredentials || false;
       xhr.send();
-      return xhr.onreadystatechange = function() {
+      xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
           return cb(null, xhr.responseXML);
         }
       };
     } catch (_error) {
-      return cb();
+      cb();
     }
   }
 }

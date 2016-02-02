@@ -27,42 +27,36 @@ class VASTClient {
     timeout: 0
   };
 
-  public static get = (url: string , opts: any, cb: any): any => {
-    let options;
+  public static get = (url: string , opts: any, cb: any): void => {
     const now = new Date().getTime();
-    const extend =  (object, properties) => {
-      for (let key in properties) {
-        if (properties.hasOwnProperty(key)) {
-          let val = properties[key];
-          object[key] = val;
-        }
-      }
-      return object;
-    };
     if (!cb) {
       if (typeof opts === "function") {
         cb = opts;
       }
-      options = {};
     }
-    options = extend(VASTClient.options, opts);
+
+    for (let key in opts) {
+      if (opts.hasOwnProperty(key)) {
+        let val = opts[key];
+        VASTClient.options[key] = val;
+      }
+    }
+    const options = VASTClient.options;
+
     if (VASTClient.totalCallsTimeout < now) {
       VASTClient.totalCalls = 1;
       VASTClient.totalCallsTimeout = now + (60 * 60 * 1000);
     } else {
       VASTClient.totalCalls++;
     }
-    if (VASTClient.cappingFreeLunch >= VASTClient.totalCalls) {
+    if (VASTClient.cappingFreeLunch >= VASTClient.totalCalls ||
+      now - VASTClient.lastSuccessfullAd < VASTClient.cappingMinimumTimeInterval) {
       cb(null);
-      return;
+    } else {
+      VASTParser.parse(url, options, (response) => {
+        cb(response);
+      });
     }
-    if (now - VASTClient.lastSuccessfullAd < VASTClient.cappingMinimumTimeInterval) {
-      cb(null);
-      return;
-    }
-    return VASTParser.parse(url, options, (response) => {
-      return cb(response);
-    });
   };
 }
 

@@ -18,13 +18,13 @@ class VASTParser {
   private static _URLTemplateFilters: Filter[] = [];
   private static _eventemitter = new EventEmitter2.EventEmitter2();
 
-  public static addURLTemplateFilter = (func: Filter) => {
+  public static addURLTemplateFilter = (func: Filter): void => {
     if (typeof func === "function") {
       VASTParser._URLTemplateFilters.push(func);
     }
   };
 
-  public static removeURLTemplateFilter = () => {
+  public static removeURLTemplateFilter = (): Filter => {
     return VASTParser._URLTemplateFilters.pop();
   };
 
@@ -32,19 +32,19 @@ class VASTParser {
     return VASTParser._URLTemplateFilters.length;
   };
 
-  public static clearURLTemplateFilters = () => {
+  public static clearURLTemplateFilters = (): void => {
     VASTParser._URLTemplateFilters = [];
   };
 
-  public static parse = (url: string, options: any, cb: any) => {
+  public static parse = (url: string, options: any, cb: any): void => {
     if (!cb) {
       if (typeof options === "function") {
         cb = options;
       }
       options = {};
     }
-    return VASTParser._parse(url, null, options, (err, response) => {
-      return cb(response);
+    VASTParser._parse(url, null, options, (err, response) => {
+      cb(response);
     });
   };
 
@@ -351,7 +351,7 @@ class VASTParser {
     return node && (node.textContent || node.text || "").trim();
   };
 
-  public static _parse (url: string, parentURLs: string[], options: any, cb: any) {
+  public static _parse = (url: string, parentURLs: string[], options: any, cb: any): void => {
     if (!cb) {
       if (typeof options === "function") {
         cb = options;
@@ -366,62 +366,30 @@ class VASTParser {
       parentURLs = [];
     }
     parentURLs.push(url);
-    return URLHandler.get(url, options, (err, xml) => {
-      var ad, node, ref, ref1, response;
-      if (err != null) {
-        return cb(err);
+
+    const complete = (response, errorAlreadyRaised?) => {
+      if (!response) {
+        return;
       }
-      response = new VASTResponse();
-      if (!(((xml != null ? xml.documentElement : void 0) != null) && xml.documentElement.nodeName === "VAST")) {
-        return cb();
+      if (errorAlreadyRaised == null) {
+        errorAlreadyRaised = false;
       }
-      ref = xml.documentElement.childNodes;
-      for (let j = 0, len1 = ref.length; j < len1; j++) {
-        node = ref[j];
-        if (node.nodeName === "Error") {
-          response.errorURLTemplates.push(VASTParser.parseNodeText(node));
-        }
-      }
-      ref1 = xml.documentElement.childNodes;
-      for (let k = 0, len2 = ref1.length; k < len2; k++) {
-        node = ref1[k];
-        if (node.nodeName === "Ad") {
-          ad = VASTParser.parseAdElement(node);
-          if (ad != null) {
-            response.ads.push(ad);
-          } else {
-            VASTParser.track(response.errorURLTemplates, {
-              ERRORCODE: 101
-            });
-          }
-        }
-      }
-      const complete = (errorAlreadyRaised?) => {
-        var l, len3, ref2;
-        if (errorAlreadyRaised == null) {
-          errorAlreadyRaised = false;
-        }
-        if (!response) {
+      for (let l = 0, len3 = response.ads.length; l < len3; l++) {
+        if (response.ads[l].nextWrapperURL != null) {
           return;
         }
-        ref2 = response.ads;
-        for (l = 0, len3 = ref2.length; l < len3; l++) {
-          ad = ref2[l];
-          if (ad.nextWrapperURL != null) {
-            return;
-          }
+      }
+      if (response.ads.length === 0) {
+        if (!errorAlreadyRaised) {
+          VASTParser.track(response.errorURLTemplates, { ERRORCODE: 303 });
         }
-        if (response.ads.length === 0) {
-          if (!errorAlreadyRaised) {
-            VASTParser.track(response.errorURLTemplates, {
-              ERRORCODE: 303
-            });
-          }
-          response = null;
-        }
-        return cb(null, response);
-      };
+        response = null;
+      }
+      cb(null, response);
+    },
+    loop = (response) => {
       let loopIndex = response.ads.length;
+      let ad;
       while (loopIndex--) {
         ad = response.ads[loopIndex];
         if (ad.nextWrapperURL == null) {
@@ -429,20 +397,18 @@ class VASTParser {
         }
         let ref3;
         if (parentURLs.length >= 10 || (ref3 = ad.nextWrapperURL, parentURLs.indexOf(ref3) >= 0)) {
-          VASTParser.track(ad.errorURLTemplates, {
-            ERRORCODE: 302
-          });
+          VASTParser.track(ad.errorURLTemplates, {ERRORCODE: 302});
           response.ads.splice(response.ads.indexOf(ad), 1);
-          complete();
+          complete(response);
         }
         if (ad.nextWrapperURL.indexOf("//") === 0) {
           const protocol = location.protocol;
           ad.nextWrapperURL = "" + protocol + ad.nextWrapperURL;
         } else if (ad.nextWrapperURL.indexOf("://") === -1) {
-          const baseURL = url.slice(0, url.lastIndexOf("/"));
-          ad.nextWrapperURL = baseURL + "/" + ad.nextWrapperURL;
+          ad.nextWrapperURL = url.slice(0, url.lastIndexOf("/")) + "/" + ad.nextWrapperURL;
         }
-        return VASTParser._parse(ad.nextWrapperURL, parentURLs, options, (err, wrappedResponse) => {
+
+        const calback = (err, wrappedResponse) => {
           let errorAlreadyRaised = false;
           if (err != null) {
             VASTParser.track(ad.errorURLTemplates, {
@@ -458,11 +424,9 @@ class VASTParser {
             errorAlreadyRaised = true;
           } else {
             response.errorURLTemplates = response.errorURLTemplates.concat(wrappedResponse.errorURLTemplates);
-            const index = response.ads.indexOf(ad);
-            response.ads.splice(index, 1);
-            const ref3 = wrappedResponse.ads;
-            for (let l = 0, len3 = ref3.length; l < len3; l++) {
-              const wrappedAd = ref3[l];
+            response.ads.splice(response.ads.indexOf(ad), 1);
+            for (let l = 0, len3 = wrappedResponse.ads.length; l < len3; l++) {
+              const wrappedAd = wrappedResponse.ads[l];
               wrappedAd.errorURLTemplates = ad.errorURLTemplates.concat(wrappedAd.errorURLTemplates);
               wrappedAd.impressionURLTemplates = ad.impressionURLTemplates.concat(wrappedAd.impressionURLTemplates);
               if (ad.trackingEvents != null) {
@@ -481,25 +445,59 @@ class VASTParser {
                 }
               }
               if (ad.videoClickTrackingURLTemplates != null) {
-                const ref6 = wrappedAd.creatives;
-                for (let o = 0, len6 = ref6.length; o < len6; o++) {
-                  const creative = ref6[o];
+                for (let o = 0, len6 = wrappedAd.creatives.length; o < len6; o++) {
+                  const creative = wrappedAd.creatives[o];
                   if (creative.type === "linear") {
                     creative.videoClickTrackingURLTemplates
                       = creative.videoClickTrackingURLTemplates.concat(ad.videoClickTrackingURLTemplates);
                   }
                 }
               }
-              response.ads.splice(index, 0, wrappedAd);
+              response.ads.splice(response.ads.indexOf(ad), 0, wrappedAd);
             }
           }
           delete ad.nextWrapperURL;
-          complete(errorAlreadyRaised);
-        });
+          complete(response, errorAlreadyRaised);
+        };
+        VASTParser._parse(ad.nextWrapperURL, parentURLs, options, calback);
       }
-      return complete();
-    });
-  }
+      complete(response);
+    },
+    callback = (err, xml) => {
+      if (err != null) {
+        cb(err);
+        return;
+      }
+
+      let response = new VASTResponse();
+      if (!(((xml != null ? xml.documentElement : void 0) != null) && xml.documentElement.nodeName === "VAST")) {
+        cb();
+        return;
+      }
+
+      const ref = xml.documentElement.childNodes;
+      for (let j = 0, len1 = ref.length; j < len1; j++) {
+        if (ref[j].nodeName === "Error") {
+          response.errorURLTemplates.push(VASTParser.parseNodeText(ref[j]));
+        }
+      }
+      const ref1 = xml.documentElement.childNodes;
+      for (let k = 0, len2 = ref1.length; k < len2; k++) {
+        if (ref1[k].nodeName === "Ad") {
+          const ad = VASTParser.parseAdElement(ref1[k]);
+          if (ad != null) {
+            response.ads.push(ad);
+          } else {
+            VASTParser.track(response.errorURLTemplates, { ERRORCODE: 101 });
+          }
+        }
+      }
+
+      loop(response);
+    };
+
+    URLHandler.get(url, options, callback);
+  };
 }
 
 export = VASTParser

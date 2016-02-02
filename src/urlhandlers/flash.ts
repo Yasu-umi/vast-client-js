@@ -31,7 +31,8 @@ class FlashURLHandle {
     if (xmlDocument = typeof tmpWindow.ActiveXObject === "function" ? new tmpWindow.ActiveXObject("Microsoft.XMLDOM") : void 0) {
       xmlDocument.async = false;
     } else {
-      return cb();
+      cb();
+      return;
     }
     const xdr = this.xdr();
     xdr.open("GET", url);
@@ -39,9 +40,9 @@ class FlashURLHandle {
     xdr.withCredentials = options.withCredentials || false;
     xdr.send();
     xdr.onprogress = function() {};
-    return xdr.onload = function() {
+    xdr.onload = function() {
       xmlDocument.loadXML(xdr.responseText);
-      return cb(null, xmlDocument);
+      cb(null, xmlDocument);
     };
   }
 }
