@@ -18,7 +18,7 @@ class ExtendedStrage extends Storage {
   }
 }
 
-function isDisabled (store: Storage) {
+function isDisabled (store: Storage): boolean {
   try {
     const testValue = "__VASTUtil__";
     store.setItem(testValue, testValue);
@@ -33,18 +33,14 @@ function isDisabled (store: Storage) {
 };
 
 function getStorage (): ExtendedStrage {
-  let storage: Storage, _storage: ExtendedStrage, storageError;
+  let storage: Storage;
   try {
     storage = typeof window !== "undefined" && window !== null ? window.localStorage || window.sessionStorage : null;
   } catch (_error) {
-    storageError = _error;
+    const storageError = _error;
     storage = null;
   }
-  if ((storage == null) || isDisabled(storage)) {
-    _storage =  new ExtendedStrage();
-  } else {
-    _storage = <ExtendedStrage> storage;
-  }
+  const _storage = ((storage == null) || isDisabled(storage)) ? new ExtendedStrage() : <ExtendedStrage>storage;
   return _storage;
 }
 

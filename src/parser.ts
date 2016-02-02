@@ -347,8 +347,13 @@ class VASTParser {
     return hours + minutes + seconds;
   };
 
-  public static parseNodeText = (node): string => {
-    return node && (node.textContent || node.text || "").trim();
+  public static parseNodeText = (node: Node): string => {
+    const text = 
+      (typeof node === "string") ? node :
+      ("textContent" in node) ? node.textContent.trim() :
+      ("textContent" in node) ? node["text"].trim() :
+      "".trim()
+    return text;
   };
 
   public static _parse = (url: string, parentURLs: string[], options: any, cb: any): void => {

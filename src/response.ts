@@ -1,6 +1,9 @@
+import VASTAd = require("./ad");
+
+
 class VASTResponse {
-  public ads: any[];
-  public errorURLTemplates: any[];
+  public ads: VASTAd[];
+  public errorURLTemplates: string[];
   constructor () {
     this.ads = [];
     this.errorURLTemplates = [];

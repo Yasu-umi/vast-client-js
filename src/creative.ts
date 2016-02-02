@@ -1,6 +1,12 @@
+import VASTMediaFile = require("./mediafile");
+
+interface InterfaceEvents {
+  eventName?: string;
+}
+
 namespace creative {
   export class VASTCreative {
-    public trackingEvents: any;
+    public trackingEvents: InterfaceEvents;
     constructor () {
       this.trackingEvents = {};
     }
@@ -9,11 +15,11 @@ namespace creative {
   export class VASTCreativeLinear extends VASTCreative {
     public type: string;
     public duration: number;
-    public skipDelay: any;
-    public mediaFiles: any[];
-    public videoClickThroughURLTemplate: any;
-    public videoClickTrackingURLTemplates: any[];
-    public videoCustomClickURLTemplates: any[];
+    public skipDelay: number;
+    public mediaFiles: VASTMediaFile[];
+    public videoClickThroughURLTemplate: string;
+    public videoClickTrackingURLTemplates: string[];
+    public videoCustomClickURLTemplates: string[];
     public adParameters: any;
     constructor () {
       super();
@@ -33,8 +39,8 @@ namespace creative {
 
   export class VASTCreativeCompanion extends VASTCreative {
     public type: string;
-    public variations: any[];
-    public videoClickTrackingURLTemplates: any[];
+    public variations: string[];
+    public videoClickTrackingURLTemplates: string[];
     constructor () {
       super();
       this.type = "companion";

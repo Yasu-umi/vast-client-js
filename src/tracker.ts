@@ -1,12 +1,13 @@
 /// <reference path="../typings/eventemitter2/eventemitter2.d.ts" />
 
 import EventEmitter2 = require("eventemitter2");
+import VASTAd = require("./ad");
 import VASTClient = require("./client");
 import VASTUtil = require("./util");
 import creative = require("./creative");
 
 class VASTTracker extends EventEmitter2.EventEmitter2 {
-  public ad;
+  public ad: VASTAd;
   public creative: creative.VASTCreative;
   public muted: boolean;
   public impressed: boolean;
@@ -16,15 +17,16 @@ class VASTTracker extends EventEmitter2.EventEmitter2 {
   public emitAlwaysEvents: string[];
   public skipDelay: number;
   public linear: boolean;
-  public clickThroughURLTemplate: any;
-  public clickTrackingURLTemplates: any;
+  public clickThroughURLTemplate: string;
+  public clickTrackingURLTemplates: string[];
   public assetDuration: number;
   public quartiles: {firstQuartile: number, midpoint: number, thirdQuartile: number};
   public progress: string;
   public paused: boolean;
   public fullscreen: boolean;
 
-  constructor (ad, creative) {
+  constructor(ad: VASTAd, creative: creative.VASTCreativeLinear);
+  constructor(ad: VASTAd, creative: any) {
     super();
     this.ad = ad;
     this.creative = creative;
@@ -57,20 +59,20 @@ class VASTTracker extends EventEmitter2.EventEmitter2 {
       this.linear = false;
     }
     this.on("start", function() {
-      VASTClient.lastSuccessfullAd = +new Date();
+      VASTClient.lastSuccessfullAd = new Date().getTime();
     });
   }
 
-  public setDuration (duration: number): void {
+  public setDuration = (duration: number): void => {
     this.assetDuration = duration;
     this.quartiles = {
-      "firstQuartile" : Math.round(25 * this.assetDuration) / 100,
-      "midpoint" : Math.round(50 * this.assetDuration) / 100,
-      "thirdQuartile" : Math.round(75 * this.assetDuration) / 100,
+      "firstQuartile": Math.round(25 * this.assetDuration) / 100,
+      "midpoint": Math.round(50 * this.assetDuration) / 100,
+      "thirdQuartile": Math.round(75 * this.assetDuration) / 100,
     };
-  }
+  };
 
-  public setProgress (progress) {
+  public setProgress = (progress): void => {
     const skipDelay = (this.skipDelay === null) ? this.skipDelayDefault : this.skipDelay;
 
     if (skipDelay !== -1 && !this.skipable) {
@@ -107,82 +109,81 @@ class VASTTracker extends EventEmitter2.EventEmitter2 {
       }
     }
     this.progress = progress;
-  }
+  };
 
-  public setMuted (muted): void {
+  public setMuted = (muted): void => {
     if (this.muted !== muted) {
       this.track(muted ? "mute" : "unmute");
     }
     this.muted = muted;
-  }
+  };
 
-  public setPaused (paused): void {
+  public setPaused = (paused): void => {
     if (this.paused !== paused) {
       this.track(paused ? "pause" : "resume");
     }
     this.paused = paused;
-  }
+  };
 
-  public setFullscreen (fullscreen): void {
+  public setFullscreen = (fullscreen): void => {
     if (this.fullscreen !== fullscreen) {
       this.track(fullscreen ? "fullscreen" : "exitFullscreen");
     }
     this.fullscreen = fullscreen;
-  }
+  };
 
-  public setSkipDelay (duration: number): void {
+  public setSkipDelay = (duration: number): void => {
     if (typeof duration === "number") {
       this.skipDelay = duration;
     }
-  }
+  };
 
-  public load (): void {
+  public load = (): void => {
     if (!this.impressed) {
       this.impressed = true;
       this.trackURLs(this.ad.impressionURLTemplates);
       this.track("creativeView");
     }
-  }
+  };
 
-  public errorWithCode (errorCode) {
+  public errorWithCode = (errorCode): void => {
     this.trackURLs(this.ad.errorURLTemplates, {
       ERRORCODE: errorCode
     });
-  }
+  };
 
-  public complete (): void {
+  public complete = (): void => {
     this.track("complete");
-  }
+  };
 
-  public close (): void {
+  public close = (): void => {
     this.track(this.linear ? "closeLinear" : "close");
-  }
+  };
 
-  public stop (): void {}
+  public stop = (): void => {};
 
-  public skip (): void {
+  public skip = (): void => {
     this.track("skip");
     this.trackingEvents = [];
-  }
+  };
 
-  public click (): void {
-    var clickThroughURL, ref, variables;
-    if ((ref = this.clickTrackingURLTemplates) != null ? ref.length : void 0) {
+  public click = (): void => {
+    const ref = this.clickTrackingURLTemplates;
+    if (ref != null ? ref.length : void 0) {
       this.trackURLs(this.clickTrackingURLTemplates);
     }
     if (this.clickThroughURLTemplate != null) {
-      if (this.linear) {
-        variables = {
-          CONTENTPLAYHEAD: this.progressFormated()
-        };
-      }
-      clickThroughURL = VASTUtil.resolveURLTemplates([this.clickThroughURLTemplate], variables)[0];
+      const variables = (this.linear) ? { CONTENTPLAYHEAD: this.progressFormated() } : undefined;
+      const clickThroughURL = VASTUtil.resolveURLTemplates([this.clickThroughURLTemplate], variables)[0];
       this.emit("clickthrough", clickThroughURL);
     }
-  }
+  };
 
   public track (eventName: string, once: boolean = false): void {
-    if (eventName === "closeLinear" && ((this.trackingEvents[eventName] == null) && (this.trackingEvents["close"] != null))) {
+    if (eventName === "closeLinear" &&
+      ((this.trackingEvents[eventName] == null) &&
+      (this.trackingEvents["close"] != null))
+    ) {
       eventName = "close";
     }
     const trackingURLTemplates = this.trackingEvents[eventName];
@@ -212,27 +213,12 @@ class VASTTracker extends EventEmitter2.EventEmitter2 {
 
   public progressFormated (): string {
     const seconds = parseInt(this.progress);
-    let h = seconds / (60 * 60);
-    let _h;
-    if (String(h).length < 2) {
-      _h = "0" + h;
-    } else {
-      _h = String(h);
-    }
-    let m = seconds / 60 % 60;
-    let _m;
-    if (String(m).length < 2) {
-      _m = "0" + m;
-    } else {
-      _m = String(m);
-    }
-    let s = seconds % 60;
-    let _s;
-    if (String(s).length < 2) {
-      _s = "0" + s;
-    } else {
-      _s = s;
-    }
+    const h = String(seconds / (60 * 60));
+    const _h = (h.length < 2) ? ("0" + h) : h;
+    const m = String(seconds / 60 % 60);
+    const _m = (m.length < 2) ? ("0" + m) : m;
+    const s = String(seconds % 60);
+    const _s = (s.length < 2) ? ("0" + s) : s;
     const ms = parseInt(String((Number(this.progress) - seconds) * 100));
     return _h + ":" + _m + ":" + _s + "." + ms;
   }

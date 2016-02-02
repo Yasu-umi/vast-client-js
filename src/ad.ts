@@ -3,13 +3,13 @@ interface Creative {
 }
 
 class VASTAd {
-  public id = "";
-  public errorURLTemplates = [];
-  public impressionURLTemplates = [];
+  public id: string = "";
+  public errorURLTemplates: string[] = [];
+  public impressionURLTemplates: string[] = [];
   public creatives: Creative[] = [];
   public nextWrapperURL: string = "";
   public trackingEvents: any;
-  public videoClickTrackingURLTemplates: any;
+  public videoClickTrackingURLTemplates: string[];
 }
 
 export = VASTAd

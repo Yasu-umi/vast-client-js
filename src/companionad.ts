@@ -1,13 +1,17 @@
+interface InterfaceEvents {
+  eventName?: string;
+}
+
 class VASTCompanionAd {
-  public id: any;
+  public id: string;
   public width: number;
   public height: number;
   public type: string;
-  public staticResource: any;
-  public htmlResource: any;
-  public iframeResource: any;
-  public companionClickThroughURLTemplate: any;
-  public trackingEvents: any;
+  public staticResource: string;
+  public htmlResource: string;
+  public iframeResource: string;
+  public companionClickThroughURLTemplate: string;
+  public trackingEvents: InterfaceEvents;
   constructor () {
     this.id = null;
     this.width = 0;
